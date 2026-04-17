@@ -1,986 +1,492 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Liquidación de Viajes — Arce Hnos.</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
-<style>
-:root {
-  --navy:    #1E2A5E;
-  --navy2:   #162050;
-  --navy3:   #243070;
-  --orange:  #F47920;
-  --orange2: #e06810;
-  --white:   #FFFFFF;
-  --bg:      #F2F4F8;
-  --surface: #FFFFFF;
-  --border:  #D8DCE8;
-  --text:    #1E2A5E;
-  --muted:   #7A86AA;
-  --success: #1BA870;
-  --danger:  #E03030;
-  --r:       10px;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Barlow', sans-serif;
-  font-size: 14px;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
- 
-/* ── Header ── */
-header {
-  background: var(--navy);
-  padding: 0 36px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 12px rgba(30,42,94,.25);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.logo-wrap {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-/* SVG logo inline de Arce Hnos */
-.logo-svg { height: 34px; width: auto; }
-.logo-divider {
-  width: 1px; height: 28px;
-  background: rgba(255,255,255,.2);
-}
-.logo-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: rgba(255,255,255,.85);
-  letter-spacing: .5px;
-  line-height: 1.2;
-}
-.logo-sub {
-  font-size: 10px;
-  color: var(--orange);
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.6);
-  letter-spacing: .5px;
-}
- 
-/* ── Layout ── */
-main {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 0;
-  min-height: calc(100vh - 60px);
-}
- 
-/* ── Panel izquierdo ── */
-.sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-}
-.sidebar-section {
-  padding: 22px 24px;
-  border-bottom: 1px solid var(--border);
-}
-.sidebar-section:last-child { border-bottom: none; flex: 1; }
-.sec-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 14px;
-}
- 
-/* ── Drop zones ── */
-.dropzone {
-  border: 2px dashed var(--border);
-  border-radius: var(--r);
-  padding: 18px 14px;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  position: relative;
-  background: var(--bg);
-}
-.dropzone:hover, .dropzone.drag-over {
-  border-color: var(--orange);
-  background: rgba(244,121,32,.04);
-}
-.dropzone.loaded {
-  border-color: var(--success);
-  border-style: solid;
-  background: rgba(27,168,112,.04);
-}
-.dropzone input[type=file] {
-  position: absolute; inset: 0;
-  opacity: 0; cursor: pointer;
-  width: 100%; height: 100%;
-}
-.dz-icon { font-size: 20px; margin-bottom: 6px; }
-.dz-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: .3px;
-}
-.dz-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
-.dz-ok  {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--success);
-  margin-top: 5px;
-}
- 
-/* ── Padrón badge ── */
-.padron-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.padron-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1.5px solid var(--border);
-  color: var(--muted);
-  transition: all .3s;
-}
-.padron-pill.ok {
-  border-color: var(--success);
-  color: var(--success);
-  background: rgba(27,168,112,.07);
-}
-.padron-pill .dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--border);
-  transition: background .3s;
-}
-.padron-pill.ok .dot { background: var(--success); }
- 
-/* ── Botones ── */
-.btn-primary {
-  width: 100%;
-  padding: 13px;
-  background: var(--orange);
-  color: #fff;
-  border: none;
-  border-radius: var(--r);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  cursor: pointer;
-  transition: all .2s;
-  text-transform: uppercase;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--orange2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(244,121,32,.3);
-}
-.btn-primary:disabled {
-  background: var(--border);
-  color: var(--muted);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-.btn-sm {
-  padding: 5px 12px;
-  background: transparent;
-  color: var(--navy);
-  border: 1.5px solid var(--border);
-  border-radius: 6px;
-  font-family: 'Barlow', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-sm:hover { border-color: var(--navy); background: rgba(30,42,94,.04); }
-.btn-sm.danger { color: var(--danger); border-color: var(--danger); }
-.btn-sm.danger:hover { background: rgba(224,48,48,.06); }
-.btn-download {
-  padding: 8px 18px;
-  background: var(--navy);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: .5px;
-  cursor: pointer;
-  transition: all .2s;
-}
-.btn-download:hover { background: var(--navy3); transform: translateY(-1px); }
- 
-/* ── Panel derecho ── */
-.content {
-  padding: 28px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
-}
-.content-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.content-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--navy);
-  letter-spacing: -.3px;
-}
-.content-title span { color: var(--orange); }
- 
-/* ── Progress bar ── */
-.progress-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.progress-bar-track {
-  height: 4px;
-  background: var(--bg);
-}
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--navy), var(--orange));
-  width: 0%;
-  transition: width .4s ease;
-}
-.progress-body {
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.p-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--muted); flex-shrink: 0;
-  transition: background .3s;
-}
-.p-dot.running { background: var(--orange); animation: blink 1s infinite; }
-.p-dot.done    { background: var(--success); }
-.p-dot.error   { background: var(--danger); }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
-.p-text { font-size: 13px; font-weight: 600; color: var(--text); }
-.p-sub  { font-size: 11px; color: var(--muted); margin-left: auto; }
- 
-/* ── Driver grid ── */
-.driver-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 10px;
-}
-.driver-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: pop .25s ease both;
-}
-@keyframes pop { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
-.dc-avatar {
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  background: var(--bg);
-  border: 1.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px; font-weight: 800;
-  color: var(--muted);
-  flex-shrink: 0;
-  transition: all .3s;
-}
-.dc-avatar.running {
-  border-color: var(--orange);
-  color: var(--orange);
-  background: rgba(244,121,32,.08);
-  animation: blink 1s infinite;
-}
-.dc-avatar.done {
-  border-color: var(--success);
-  color: var(--success);
-  background: rgba(27,168,112,.08);
-}
-.dc-name {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--navy);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dc-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.dc-km {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--navy);
-  white-space: nowrap;
-  margin-left: auto;
-}
- 
-/* ── Idle ── */
-.idle {
-  flex: 1; display: flex;
-  flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 10px; color: var(--muted); text-align: center;
-  padding: 60px 0;
-}
-.idle-icon { font-size: 48px; opacity: .25; }
-.idle-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 20px; font-weight: 700;
-  color: var(--muted);
-}
-.idle-sub { font-size: 12px; }
- 
-/* ── Hint text ── */
-.hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 8px; }
-.hint span { color: var(--orange); font-weight: 600; }
- 
-/* ── Toast ── */
-.toast {
-  position: fixed; bottom: 24px; right: 24px;
-  background: var(--navy);
-  color: #fff;
-  border-radius: 10px;
-  padding: 11px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  transform: translateY(16px);
-  opacity: 0;
-  transition: all .3s;
-  z-index: 999;
-  max-width: 320px;
-  border-left: 4px solid var(--orange);
-}
-.toast.show { transform: translateY(0); opacity: 1; }
-.toast.success { border-left-color: var(--success); }
-.toast.error   { border-left-color: var(--danger); }
- 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidación de Viajes — Arce Hnos.</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --navy:    #1E2A5E;
+            --navy-light: #243070;
+            --orange:  #F47920;
+            --orange-hover: #e06810;
+            --white:   #FFFFFF;
+            --bg:      #F8FAFC; /* Más claro y moderno */
+            --surface: #FFFFFF;
+            --border:  #E2E8F0;
+            --text:    #1E2A5E;
+            --muted:   #64748B;
+            --success: #10B981;
+            --danger:  #EF4444;
+            --shadow:  0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --r:       12px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        header {
+            background: var(--navy);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-wrap { display: flex; align-items: center; gap: 12px; }
+        .logo-svg { height: 38px; width: auto; }
+        .logo-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.15); }
+        .logo-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; color: #fff; }
+        .logo-sub { font-size: 10px; color: var(--orange); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ── Layout Responsivo ── */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 992px) {
+            main { display: grid; grid-template-columns: 340px 1fr; }
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .sec-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Drop zones ── */
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: var(--r);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #Fcfcfc;
+            position: relative;
+        }
+
+        .dropzone:hover {
+            border-color: var(--orange);
+            background: rgba(244,121,32,0.03);
+            transform: translateY(-2px);
+        }
+
+        .dropzone.loaded {
+            border-color: var(--success);
+            border-style: solid;
+            background: #F0FDF4;
+        }
+
+        .dz-icon { color: var(--muted); margin-bottom: 8px; }
+        .loaded .dz-icon { color: var(--success); }
+        .dz-title { font-weight: 700; font-size: 13px; color: var(--navy); }
+        .dz-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--orange);
+            color: #fff;
+            border: none;
+            border-radius: var(--r);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(244,121,32,0.2);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--orange-hover);
+            transform: scale(1.02);
+        }
+
+        .btn-primary:disabled {
+            background: var(--border);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        /* ── Content Area ── */
+        .content {
+            padding: 32px;
+            overflow-y: auto;
+            background-image: radial-gradient(var(--border) 0.5px, transparent 0.5px);
+            background-size: 24px 24px; /* Patrón de puntos profesional */
+        }
+
+        .content-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .content-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--navy);
+        }
+
+        /* ── Driver Grid ── */
+        .driver-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .driver-card {
+            background: var(--surface);
+            border-radius: var(--r);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: all 0.2s ease;
+        }
+
+        .driver-card:hover {
+            border-color: var(--orange);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        .dc-avatar {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+        .dc-avatar.done { background: #DCFCE7; color: var(--success); border-color: #BBF7D0; }
+
+        .dc-info { flex: 1; min-width: 0; }
+        .dc-name { font-weight: 700; color: var(--navy); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dc-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .dc-km { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--orange); }
+
+        /* ── Progress Card ── */
+        .progress-card {
+            background: var(--navy);
+            color: #fff;
+            border-radius: var(--r);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(30,42,94,0.2);
+        }
+
+        .progress-bar-track { height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--orange); width: 0%; transition: width 0.4s ease; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 32px; right: 32px;
+            background: var(--navy); color: #fff;
+            padding: 14px 24px; border-radius: var(--r);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 10px;
+            transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* Utilidades */
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
- 
-<!-- ── Header ── -->
+
 <header>
-  <div class="logo-wrap">
-    <!-- Logo SVG Arce Hnos. reconstruido -->
-    <svg class="logo-svg" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Líneas de velocidad -->
-      <rect x="0" y="10" width="38" height="6" rx="3" fill="#F47920"/>
-      <rect x="6" y="20" width="30" height="6" rx="3" fill="#F47920"/>
-      <rect x="12" y="30" width="22" height="6" rx="3" fill="#F47920"/>
-      <!-- Círculo rojo -->
-      <circle cx="54" cy="22" r="12" stroke="#E02020" stroke-width="5" fill="none"/>
-      <!-- Texto ARCE Hnos. -->
-      <text x="72" y="18" font-family="'Barlow Condensed',sans-serif" font-weight="800" font-size="16" fill="white" letter-spacing="0.5">ARCE Hnos.</text>
-      <text x="72" y="32" font-family="'Barlow',sans-serif" font-weight="400" font-size="9" fill="rgba(255,255,255,0.6)" letter-spacing="1">Logística &amp; Transporte</text>
-    </svg>
-    <div class="logo-divider"></div>
-    <div>
-      <div class="logo-title">Liquidación de Viajes</div>
-      <div class="logo-sub">Convenio Colectivo</div>
-    </div>
-  </div>
-  <div class="header-right">
-    <div class="badge">v2.0</div>
-  </div>
-</header>
- 
-<main>
-  <!-- ── Sidebar ── -->
-  <div class="sidebar">
- 
-    <!-- Padrón -->
-    <div class="sidebar-section">
-      <div class="sec-label">Padrón de Tramos</div>
-      <div class="padron-row">
-        <div id="padron-pill" class="padron-pill">
-          <div class="dot"></div>
-          <span id="padron-txt">No cargado</span>
+    <div class="logo-wrap">
+        <svg class="logo-svg" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="10" width="38" height="6" rx="3" fill="#F47920"/>
+            <rect x="6" y="20" width="30" height="6" rx="3" fill="#F47920"/>
+            <rect x="12" y="30" width="22" height="6" rx="3" fill="#F47920"/>
+            <circle cx="54" cy="22" r="12" stroke="#fff" stroke-width="4" fill="none"/>
+            <text x="72" y="18" font-family="Barlow Condensed" font-weight="800" font-size="16" fill="white">ARCE Hnos.</text>
+            <text x="72" y="32" font-family="Barlow" font-weight="400" font-size="9" fill="rgba(255,255,255,0.6)">Logística & Transporte</text>
+        </svg>
+        <div class="logo-divider"></div>
+        <div>
+            <div class="logo-title">Liquidación de Viajes</div>
+            <div class="logo-sub">Sistema Operativo</div>
         </div>
-        <button id="btn-borrar-padron" class="btn-sm danger" onclick="clearPadron()" style="display:none">Borrar</button>
-      </div>
-      <div class="dropzone" id="dz-padron">
-        <input type="file" id="f-padron" accept=".xls,.xlsx" onchange="loadPadron(this.files[0])">
-        <div class="dz-icon">📋</div>
-        <div class="dz-title">v-PadronTramos.xls</div>
-        <div class="dz-sub">Se guarda automáticamente en el navegador</div>
-      </div>
     </div>
- 
-    <!-- AgendaOS -->
-    <div class="sidebar-section">
-      <div class="sec-label">Agenda de Órdenes</div>
-      <div class="dropzone" id="dz-agenda">
-        <input type="file" id="f-agenda" accept=".xls,.xlsx" onchange="loadAgenda(this.files[0])">
-        <div class="dz-icon">📄</div>
-        <div class="dz-title">AgendaOS.xls</div>
-        <div class="dz-sub">Arrastrá o hacé clic para seleccionar</div>
-        <div id="agenda-ok" class="dz-ok" style="display:none"></div>
-      </div>
+    <div class="header-right">
+        <span style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600;">BUILD 2026.04</span>
     </div>
- 
-    <!-- Generar -->
-    <div class="sidebar-section" style="margin-top:auto">
-      <button id="btn-gen" class="btn-primary" onclick="generate()" disabled>
-        Generar Liquidaciones
-      </button>
-      <div class="hint" id="hint-txt">Cargá el <span>AgendaOS</span> para continuar</div>
+</header>
+
+<main>
+    <aside class="sidebar">
+        <section>
+            <div class="sec-label"><i data-lucide="database" size="14"></i> Padrón de Tramos</div>
+            <div id="dz-padron" class="dropzone">
+                <input type="file" id="f-padron" class="hidden" accept=".xls,.xlsx" onchange="loadPadron(this.files[0])">
+                <div class="dz-icon"><i data-lucide="upload-cloud"></i></div>
+                <div class="dz-title" id="padron-txt">v-PadronTramos.xls</div>
+                <div class="dz-sub">Base de datos de kilometrajes</div>
+            </div>
+            <button id="btn-clear-padron" class="hidden" onclick="clearPadron()" style="margin-top:8px; background:none; border:none; color:var(--danger); font-size:11px; cursor:pointer; font-weight:600;">✕ Eliminar padrón guardado</button>
+        </section>
+
+        <section>
+            <div class="sec-label"><i data-lucide="file-text" size="14"></i> Agenda de Órdenes</div>
+            <div id="dz-agenda" class="dropzone" onclick="document.getElementById('f-agenda').click()">
+                <input type="file" id="f-agenda" class="hidden" accept=".xls,.xlsx" onchange="loadAgenda(this.files[0])">
+                <div class="dz-icon"><i data-lucide="file-spreadsheet"></i></div>
+                <div class="dz-title" id="agenda-txt">AgendaOS.xls</div>
+                <div class="dz-sub">Arrastra el archivo de exportación</div>
+            </div>
+        </section>
+
+        <section style="margin-top: auto;">
+            <button id="btn-gen" class="btn-primary" onclick="generate()" disabled>
+                Generar Reportes
+            </button>
+            <p id="hint-txt" style="font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px;">Carga los archivos para comenzar</p>
+        </section>
+    </aside>
+
+    <div class="content">
+        <div id="prog-card" class="progress-card hidden">
+            <div class="progress-bar-track">
+                <div id="prog-fill" class="progress-bar-fill"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div id="prog-text" style="font-weight: 700; font-size: 14px;">Procesando...</div>
+                    <div id="prog-sub" style="font-size: 11px; opacity: 0.7;">Calculando rutas y kilometrajes</div>
+                </div>
+                <i data-lucide="loader-2" class="spin" style="animation: spin 1s linear infinite;"></i>
+            </div>
+        </div>
+
+        <div class="content-header">
+            <h1 class="content-title">Dashboard <span id="result-n" style="color:var(--orange)"></span></h1>
+            <button id="btn-dl" class="btn-primary hidden" style="width:auto; padding: 8px 20px;" onclick="doDownload()">
+                <i data-lucide="download" size="16" style="vertical-align: middle; margin-right: 8px;"></i> Descargar .xlsx
+            </button>
+        </div>
+
+        <div id="idle-state" style="text-align: center; padding: 80px 0; color: var(--muted);">
+            <i data-lucide="truck" size="48" style="margin-bottom: 16px; opacity: 0.2;"></i>
+            <h2 style="font-family: 'Barlow Condensed'; font-size: 20px;">Esperando documentos</h2>
+            <p style="font-size: 13px;">Los resultados aparecerán aquí una vez procesados.</p>
+        </div>
+
+        <div id="driver-grid" class="driver-grid"></div>
     </div>
- 
-  </div>
- 
-  <!-- ── Content ── -->
-  <div class="content">
-    <div class="content-header">
-      <div class="content-title">Resultados <span id="result-n"></span></div>
-      <button id="btn-dl" class="btn-download" onclick="doDownload()" style="display:none">
-        ↓ Descargar xlsx
-      </button>
-    </div>
- 
-    <div id="prog-card" class="progress-card" style="display:none">
-      <div class="progress-bar-track">
-        <div id="prog-fill" class="progress-bar-fill"></div>
-      </div>
-      <div class="progress-body">
-        <div id="prog-dot" class="p-dot running"></div>
-        <div id="prog-text" class="p-text">Procesando...</div>
-        <div id="prog-sub" class="p-sub"></div>
-      </div>
-    </div>
- 
-    <div id="idle" class="idle">
-      <div class="idle-icon">🚛</div>
-      <div class="idle-title">Listo para procesar</div>
-      <div class="idle-sub">Cargá el PadronTramos y el AgendaOS</div>
-    </div>
- 
-    <div id="driver-grid" class="driver-grid" style="display:none"></div>
-  </div>
 </main>
- 
-<div id="toast" class="toast"></div>
- 
+
+<div id="toast" class="toast">
+    <i data-lucide="check-circle" size="18"></i>
+    <span id="toast-msg">Mensaje</span>
+</div>
+
 <script>
-// ════════════════════════════════════════════
-//  PADRON
-// ════════════════════════════════════════════
-const PADRON_KEY = 'arce_padron_v2';
-let KM = {};
- 
-function initPadron() {
-  const s = localStorage.getItem(PADRON_KEY);
-  if (!s) return;
-  try {
-    KM = JSON.parse(s);
-    setPadronUI(true, `${Object.keys(KM).length.toLocaleString('es-AR')} tramos`);
-  } catch(e) { localStorage.removeItem(PADRON_KEY); }
-}
- 
-function loadPadron(file) {
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      const lk = {};
-      for (let i = 3; i < rows.length; i++) {
-        const o  = String(rows[i][0]||'').trim().toUpperCase();
-        const d  = String(rows[i][1]||'').trim().toUpperCase();
-        const km = rows[i][2];
-        if (o && d && km && !isNaN(km)) lk[o+'|'+d] = +km;
-      }
-      if (Object.keys(lk).length < 100) throw new Error('Archivo inválido');
-      KM = lk;
-      localStorage.setItem(PADRON_KEY, JSON.stringify(lk));
-      setPadronUI(true, `${Object.keys(lk).length.toLocaleString('es-AR')} tramos guardados`);
-      toast('✓ PadronTramos cargado', 'success');
-      checkReady();
-    } catch(e) { toast('Error PadronTramos: '+e.message, 'error'); }
-  };
-  r.readAsArrayBuffer(file);
-}
- 
-function clearPadron() {
-  localStorage.removeItem(PADRON_KEY);
-  KM = {};
-  setPadronUI(false, 'No cargado');
-  checkReady();
-}
- 
-function setPadronUI(ok, txt) {
-  document.getElementById('padron-pill').className = 'padron-pill'+(ok?' ok':'');
-  document.getElementById('padron-txt').textContent = txt;
-  document.getElementById('btn-borrar-padron').style.display = ok ? '' : 'none';
-  document.getElementById('dz-padron').className = 'dropzone'+(ok?' loaded':'');
-}
- 
-function getKm(a, b) {
-  const o = loc(a), d = loc(b);
-  return KM[o+'|'+d] || KM[d+'|'+o] || null;
-}
-function loc(s) {
-  return s ? String(s).split(' - ')[0].trim().toUpperCase() : '';
-}
- 
-// ════════════════════════════════════════════
-//  AGENDA
-// ════════════════════════════════════════════
-let agendaRows = [];
- 
-function loadAgenda(file) {
-  if (!file) return;
-  const r = new FileReader();
-  r.onload = e => {
-    try {
-      const wb = XLSX.read(e.target.result, {type:'array'});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      agendaRows = rows.slice(3).filter(r => r[2] && String(r[2]).trim());
-      const drivers = [...new Set(agendaRows.map(r => String(r[2]).trim()))];
-      document.getElementById('dz-agenda').className = 'dropzone loaded';
-      const ok = document.getElementById('agenda-ok');
-      ok.style.display = '';
-      ok.textContent = `✓ ${agendaRows.length} órdenes · ${drivers.length} choferes`;
-      document.getElementById('hint-txt').innerHTML = `<span>${drivers.length} choferes</span> detectados — listo para generar`;
-      checkReady();
-    } catch(e) { toast('Error AgendaOS: '+e.message, 'error'); }
-  };
-  r.readAsArrayBuffer(file);
-}
- 
-function checkReady() {
-  document.getElementById('btn-gen').disabled = agendaRows.length === 0;
-}
- 
-// ════════════════════════════════════════════
-//  CONSTANTES XLSX
-// ════════════════════════════════════════════
-const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-const DATA_ROWS = 16;
- 
-// Estilos base — replicando exactamente el modelo
-const S = {
-  // Borde medium izquierdo + thin derecho, thin bottom
-  dL: { left:{style:'medium'}, right:{style:'thin'}, bottom:{style:'thin'} },
-  // Thin todos
-  dM: { left:{style:'thin'},   right:{style:'thin'}, bottom:{style:'thin'} },
-  // Thin izq + medium derecho
-  dR: { left:{style:'thin'},   right:{style:'medium'}, bottom:{style:'thin'} },
-  // Header: medium all + left/right como columna
-  hL: { left:{style:'medium'}, right:{style:'thin'}, top:{style:'medium'}, bottom:{style:'medium'} },
-  hM: { left:{style:'thin'},   right:{style:'thin'}, top:{style:'medium'}, bottom:{style:'medium'} },
-  hR: { left:{style:'thin'},   right:{style:'medium'}, top:{style:'medium'}, bottom:{style:'medium'} },
-  // Totales
-  tL: { left:{style:'medium'}, right:{style:'thin'}, top:{style:'medium'}, bottom:{style:'medium'} },
-  tSep:{ right:{style:'thin'},  top:{style:'medium'}, bottom:{style:'medium'} },
-  tM: { left:{style:'thin'},   right:{style:'thin'}, top:{style:'medium'}, bottom:{style:'medium'} },
-  tR: { left:{style:'thin'},   right:{style:'medium'}, top:{style:'medium'}, bottom:{style:'medium'} },
-};
- 
-function border(col) {
-  // col: 2=B(left) .. 14=N(right), col A=1 sin borde
-  if (col === 1) return {};
-  if (col === 2)  return S.dL;
-  if (col === 14) return S.dR;
-  return S.dM;
-}
-function hdrBorder(col) {
-  if (col === 1) return {};
-  if (col === 2)  return S.hL;
-  if (col === 14) return S.hR;
-  return S.hM;
-}
-function totBorder(col) {
-  if (col <= 1) return {};
-  if (col === 2) return S.tL;
-  if (col === 7) return S.tSep;
-  if (col >= 3 && col <= 6) return { top:{style:'medium'}, bottom:{style:'medium'} };
-  if (col === 14) return S.tR;
-  return S.tM;
-}
- 
-function cell(v, bold, border, align, numFmt) {
-  const s = { font: {name:'Calibri', sz:10, bold:!!bold}, border: border||{} };
-  if (align) s.alignment = align;
-  if (numFmt) s.numFmt = numFmt;
-  return { v: v===null||v===undefined?'':v, t: typeof v==='number'?'n':(v instanceof Date?'d':'s'), s };
-}
- 
-// ════════════════════════════════════════════
-//  PROCESAMIENTO
-// ════════════════════════════════════════════
-function parsePeriod(str) {
-  if (!str) return [null,null];
-  const parts = String(str).split(' - ');
-  const pd = s => { if(!s) return null; const [d,m,y]=s.trim().split('/'); return new Date(+y,+m-1,+d); };
-  return [pd(parts[0]), pd(parts[1])];
-}
- 
-function fmtDate(dt) {
-  if (!dt) return '';
-  return `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
-}
- 
-function processDrivers() {
-  const byDriver = {};
-  for (const row of agendaRows) {
-    const d = String(row[2]).trim();
-    if (!byDriver[d]) byDriver[d] = [];
-    byDriver[d].push(row);
-  }
-  const out = {};
-  for (const [driver, rows] of Object.entries(byDriver)) {
-    rows.sort((a,b) => { const [da]= parsePeriod(String(a[1])); const [db]=parsePeriod(String(b[1])); return (da||0)-(db||0); });
-    const raw = rows.map(r => {
-      const [d1,d2] = parsePeriod(String(r[1]));
-      return { d1, d2, orig:String(r[3]||'').trim(), dest:String(r[4]||'').trim(), km:r[12]?+r[12]:null, plate:String(r[5]||'').trim() };
-    });
-    for (const t of raw) { const k=getKm(t.orig,t.dest); if(k) t.km=k; }
-    const final = [];
-    for (let i=0;i<raw.length;i++) {
-      final.push(raw[i]);
-      if (i<raw.length-1) {
-        const nxt=raw[i+1];
-        if (loc(raw[i].dest)!==loc(nxt.orig)) {
-          const kr=getKm(raw[i].dest,nxt.orig);
-          const rd=raw[i].d2?new Date(raw[i].d2.getTime()+864e5):null;
-          final.push({d1:rd,d2:null,orig:raw[i].dest,dest:nxt.orig,km:kr,plate:raw[i].plate,ret:true});
+    // Inicializar Iconos
+    lucide.createIcons();
+
+    const PADRON_KEY = 'arce_padron_v2';
+    let KM = {};
+    let agendaRows = [];
+    let fileBlob = null;
+
+    // --- Lógica de Padrón ---
+    function initPadron() {
+        const s = localStorage.getItem(PADRON_KEY);
+        if (s) {
+            KM = JSON.parse(s);
+            updatePadronUI(true, `${Object.keys(KM).length} tramos cargados`);
         }
-      }
     }
-    const byDate={};
-    for (const t of final) if(t.d1) byDate[t.d1.toDateString()]=t;
-    const allD=final.filter(t=>t.d1).map(t=>t.d1);
-    if(!allD.length) continue;
-    const mn=new Date(Math.min(...allD));
-    const mx=new Date(Math.max(...allD));
-    const start=new Date(mn.getFullYear(),mn.getMonth(),1);
-    const days=[];
-    for(let d=new Date(start);d<=mx;d.setDate(d.getDate()+1)) days.push({dt:new Date(d),trip:byDate[d.toDateString()]||null});
-    out[driver]={days,final,plate:raw[0]?.plate||''};
-  }
-  return out;
-}
- 
-// ════════════════════════════════════════════
-//  GENERACIÓN XLSX CON ESTILOS
-// ════════════════════════════════════════════
-let fileBlob = null;
- 
-function generate() {
-  document.getElementById('idle').style.display='none';
-  document.getElementById('driver-grid').style.display='none';
-  document.getElementById('btn-dl').style.display='none';
-  document.getElementById('result-n').textContent='';
-  document.getElementById('prog-card').style.display='';
-  document.getElementById('driver-grid').innerHTML='';
-  setP(0,'running','Procesando órdenes...','');
-  setTimeout(()=>{
-    try {
-      const data=processDrivers();
-      const drivers=Object.keys(data).sort();
-      const wb={SheetNames:[],Sheets:{}};
-      const grid=document.getElementById('driver-grid');
-      grid.style.display='grid';
-      drivers.forEach((driver,idx)=>{
-        setP(Math.round(idx/drivers.length*90),'running','Generando: '+driver,`${idx+1}/${drivers.length}`);
-        const card=addCard(driver,'running','...');
-        const {days,final,plate}=data[driver];
-        const chunks=[];
-        for(let i=0;i<days.length;i+=DATA_ROWS){
-          const ch=days.slice(i,i+DATA_ROWS);
-          while(ch.length<DATA_ROWS){
-            const ld=ch[ch.length-1].dt;
-            ch.push({dt:new Date(ld.getTime()+864e5),trip:null});
-          }
-          chunks.push(ch);
+
+    function loadPadron(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, {header: 1});
+                const lk = {};
+                for (let i = 3; i < rows.length; i++) {
+                    const o = String(rows[i][0] || '').trim().toUpperCase();
+                    const d = String(rows[i][1] || '').trim().toUpperCase();
+                    const km = rows[i][2];
+                    if (o && d && !isNaN(km)) lk[o + '|' + d] = +km;
+                }
+                KM = lk;
+                localStorage.setItem(PADRON_KEY, JSON.stringify(lk));
+                updatePadronUI(true, `${Object.keys(lk).length} tramos guardados`);
+                showToast("Padrón actualizado correctamente");
+            } catch (err) {
+                showToast("Error al procesar el padrón", "danger");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function updatePadronUI(ok, text) {
+        const dz = document.getElementById('dz-padron');
+        const txt = document.getElementById('padron-txt');
+        const btn = document.getElementById('btn-clear-padron');
+        if (ok) {
+            dz.classList.add('loaded');
+            txt.textContent = text;
+            btn.classList.remove('hidden');
+        } else {
+            dz.classList.remove('loaded');
+            txt.textContent = "v-PadronTramos.xls";
+            btn.classList.add('hidden');
         }
-        const ws=buildSheet(driver,plate,chunks);
-        const name=driver.substring(0,31);
-        wb.SheetNames.push(name);
-        wb.Sheets[name]=ws;
-        const totalKm=final.reduce((s,t)=>s+(t.km||0),0);
-        const nVia=final.filter(t=>!t.ret).length;
-        updateCard(card,'done',`${nVia} viajes · ${totalKm.toLocaleString('es-AR')} km`);
-      });
-      setP(98,'running','Escribiendo archivo...','');
-      fileBlob=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-      setP(100,'done',`Completado — ${drivers.length} choferes procesados`,'');
-      document.getElementById('btn-dl').style.display='';
-      document.getElementById('result-n').textContent=`· ${drivers.length}`;
-      toast(`✓ ${drivers.length} liquidaciones generadas`,'success');
-    } catch(e){
-      setP(0,'error','Error: '+e.message,'');
-      toast('Error: '+e.message,'error');
-      console.error(e);
     }
-  },50);
-}
- 
-function buildSheet(driver, plate, chunks) {
-  // Construir datos como array de arrays de cells con estilo
-  const aoa=[]; // array of arrays
-  const merges=[];
-  const colWidths=[{wch:1.5},{wch:9},{wch:13},{wch:18},{wch:11},{wch:11},{wch:22},{wch:11},{wch:11},{wch:13},{wch:11},{wch:11},{wch:11},{wch:11}];
-  const rowHeights=[];
-  let curRow=0;
- 
-  const BIG={name:'Calibri',sz:11,bold:true};
-  const HDR={name:'Calibri',sz:10,bold:true};
-  const DAT={name:'Calibri',sz:10,bold:false};
-  const AC={horizontal:'center',vertical:'center',wrapText:true};
-  const AL={horizontal:'left',  vertical:'center'};
-  const ACn={horizontal:'center',vertical:'center'};
- 
-  function mk(v,font,brd,aln) {
-    const t = v instanceof Date?'d':(typeof v==='number'?'n':'s');
-    return {v:v??'', t, s:{font:font||DAT, border:brd||{}, alignment:aln||ACn}};
-  }
-  function mkN(v,font,brd,aln) { return {...mk(v,font,brd,aln), t:'n'}; }
-  function emptyRow(n=14) { return Array.from({length:n},()=>mk('')); }
- 
-  chunks.forEach((chunk, bi)=>{
-    // -- Fila 1: CONVENCION
-    rowHeights.push({hpt:15});
-    const r1=emptyRow();
-    r1[1]={v:'CONVENCION COLECTIVA DEL TRABAJO N°',t:'s',s:{font:BIG,alignment:AL}};
-    r1[7]={v:'ITEMS: 4.2.3; 4.2.4; 4.2.6',t:'s',s:{font:BIG,alignment:AL}};
-    aoa.push(r1);
-    merges.push({s:{r:curRow,c:1},e:{r:curRow,c:6}});
-    merges.push({s:{r:curRow,c:7},e:{r:curRow,c:13}});
-    curRow++;
- 
-    // -- Fila 2: Firma + N°
-    rowHeights.push({hpt:15});
-    const r2=emptyRow();
-    r2[1]={v:'Nombre de la Firma Empleadora y/o Empleador: TRANSPORTE ARCE HNOS SA',t:'s',s:{font:BIG,alignment:AL}};
-    r2[7]={v:bi+1,t:'n',s:{font:BIG,alignment:AL}};
-    r2[8]={v:`N° ${bi+1}`,t:'s',s:{font:BIG,alignment:AL}};
-    aoa.push(r2);
-    merges.push({s:{r:curRow,c:1},e:{r:curRow,c:6}});
-    merges.push({s:{r:curRow,c:8},e:{r:curRow,c:13}});
-    curRow++;
- 
-    // -- Fila 3: Conductor
-    rowHeights.push({hpt:15});
-    const r3=emptyRow();
-    r3[1]={v:'Nombre del Conductor:',t:'s',s:{font:BIG,alignment:AL}};
-    r3[3]={v:driver,t:'s',s:{font:BIG,alignment:AL}};
-    r3[5]={v:'CUIT:',t:'s',s:{font:BIG,alignment:AL}};
-    r3[6]={v:'20-39541921-9',t:'s',s:{font:BIG,alignment:AL}};
-    r3[8]={v:'N° de Patente del Camion:',t:'s',s:{font:BIG,alignment:AL}};
-    r3[10]={v:plate,t:'s',s:{font:BIG,alignment:AL}};
-    aoa.push(r3);
-    curRow++;
- 
-    // -- Filas 4-5: blancos
-    rowHeights.push({hpt:15},{hpt:15});
-    aoa.push(emptyRow()); aoa.push(emptyRow());
-    curRow+=2;
- 
-    // -- Fila 6: col headers
-    rowHeights.push({hpt:50});
-    const hdrLabels=['','Dia','Fecha','Sale de','Dia','Fecha','Llega a','Km. Recorridos','Control de descarga','Permamen. F/ Resistencia y S/Presencia','Cruce de frontera','Km. recorridos coeficiente 1,20','Km recorridos coeficiente 1,40','Km. Recorridos al 100%'];
-    const r6=hdrLabels.map((v,ci)=>{
-      if(ci===0) return mk('');
-      return {v,t:'s',s:{font:HDR,border:hdrBorder(ci+1),alignment:AC}};
-    });
-    aoa.push(r6);
-    curRow++;
- 
-    // -- Filas de datos (16 rows)
-    const dataStart=curRow;
-    chunk.forEach((entry,i)=>{
-      rowHeights.push({hpt:17});
-      const dt=entry.dt;
-      const tr=entry.trip;
-      const dia=DIAS[dt.getDay()];
-      const row=Array.from({length:14},(_,ci)=>{
-        if(ci===0) return mk('');
-        return {v:'',t:'s',s:{font:DAT,border:border(ci+1),alignment:ACn}};
-      });
-      // B: día
-      row[1]={v:dia,t:'s',s:{font:DAT,border:border(2),alignment:ACn}};
-      // C: fecha
-      row[2]={v:fmtDate(dt),t:'s',s:{font:DAT,border:border(3),alignment:ACn}};
-      if(tr){
-        row[3]={v:loc(tr.orig),t:'s',s:{font:DAT,border:border(4),alignment:ACn}};
-        row[4]={v:dia,t:'s',s:{font:DAT,border:border(5),alignment:ACn}};
-        row[5]={v:fmtDate(dt),t:'s',s:{font:DAT,border:border(6),alignment:ACn}};
-        row[6]={v:loc(tr.dest),t:'s',s:{font:DAT,border:border(7),alignment:ACn}};
-        if(tr.km!=null) row[7]={v:+tr.km,t:'n',s:{font:DAT,border:border(8),alignment:ACn}};
-      }
-      aoa.push(row);
-      curRow++;
-    });
-    const dataEnd=curRow-1;
- 
-    // -- Fila TOTALES
-    rowHeights.push({hpt:15});
-    const totRow=Array.from({length:14},(_,ci)=>{
-      if(ci===0) return mk('');
-      return {v:'',t:'s',s:{font:BIG,border:totBorder(ci+1),alignment:ACn}};
-    });
-    totRow[1]={v:'TOTALES',t:'s',s:{font:BIG,border:totBorder(2),alignment:AL}};
-    // Fórmula suma acumulada en último bloque
-    const sumRef=`H${dataStart+1}:H${dataEnd+1}`;
-    totRow[7]={v:0,t:'n',f:`SUM(${sumRef})`,s:{font:BIG,border:totBorder(8),alignment:ACn}};
-    aoa.push(totRow);
-    merges.push({s:{r:curRow,c:1},e:{r:curRow,c:6}});
-    curRow++;
- 
-    // -- Filas firma
-    rowHeights.push({hpt:15},{hpt:15},{hpt:30},{hpt:15});
-    aoa.push(emptyRow()); aoa.push(emptyRow());
-    const firmRow=emptyRow();
-    firmRow[1]={v:'Conformidad del Empleador',t:'s',s:{font:BIG,alignment:AL}};
-    firmRow[9]={v:'Conformidad del Trabajador',t:'s',s:{font:BIG,alignment:AL}};
-    aoa.push(firmRow);
-    merges.push({s:{r:curRow+1,c:1},e:{r:curRow+1,c:7}});
-    merges.push({s:{r:curRow+1,c:9},e:{r:curRow+1,c:13}});
-    aoa.push(emptyRow());
-    curRow+=4;
- 
-    // -- Separador entre bloques
-    rowHeights.push({hpt:8},{hpt:8});
-    aoa.push(emptyRow()); aoa.push(emptyRow());
-    curRow+=2;
-  });
- 
-  // Construir worksheet desde aoa
-  const ws=XLSX.utils.aoa_to_sheet(aoa.map(r=>r.map(c=>c.v??'')));
- 
-  // Aplicar estilos cell a cell
-  aoa.forEach((row,ri)=>{
-    row.forEach((cellDef,ci)=>{
-      if(!cellDef||!cellDef.s) return;
-      const addr=XLSX.utils.encode_cell({r:ri,c:ci});
-      if(!ws[addr]) ws[addr]={t:'s',v:''};
-      ws[addr].s=cellDef.s;
-      if(cellDef.t==='n'&&typeof cellDef.v==='number') ws[addr].t='n';
-      if(cellDef.f) ws[addr].f=cellDef.f;
-    });
-  });
- 
-  ws['!cols']=colWidths;
-  ws['!rows']=rowHeights;
-  ws['!merges']=merges;
-  return ws;
-}
- 
-// ════════════════════════════════════════════
-//  UI HELPERS
-// ════════════════════════════════════════════
-function setP(pct,state,text,sub){
-  document.getElementById('prog-fill').style.width=pct+'%';
-  document.getElementById('prog-dot').className='p-dot '+state;
-  document.getElementById('prog-text').textContent=text;
-  document.getElementById('prog-sub').textContent=sub||'';
-}
-function addCard(name,state,meta){
-  const grid=document.getElementById('driver-grid');
-  const initials=name.split(' ').slice(0,2).map(w=>w[0]||'').join('');
-  const card=document.createElement('div');
-  card.className='driver-card';
-  card.innerHTML=`<div class="dc-avatar ${state}">${initials}</div>
-    <div style="flex:1;min-width:0">
-      <div class="dc-name">${name}</div>
-      <div class="dc-meta" id="m-${name.replace(/\s+/g,'_')}">${meta}</div>
-    </div>
-    <div class="dc-km" id="k-${name.replace(/\s+/g,'_')}"></div>`;
-  grid.appendChild(card);
-  return card;
-}
-function updateCard(card,state,meta){
-  card.querySelector('.dc-avatar').className='dc-avatar '+state;
-  card.querySelector('.dc-meta').textContent=meta;
-}
-function doDownload(){
-  if(!fileBlob) return;
-  const blob=new Blob([fileBlob],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=`LiquidacionViajes_${new Date().toISOString().slice(0,10)}.xlsx`;
-  a.click(); URL.revokeObjectURL(url);
-  toast('✓ Archivo descargado','success');
-}
-function toast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast show '+(type||'');
-  setTimeout(()=>t.className='toast',3500);
-}
- 
-// Drag & drop
-['dz-padron','dz-agenda'].forEach(id=>{
-  const el=document.getElementById(id);
-  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
-  el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
-  el.addEventListener('drop',e=>{
-    e.preventDefault(); el.classList.remove('drag-over');
-    const f=e.dataTransfer.files[0];
-    if(f) id==='dz-padron'?loadPadron(f):loadAgenda(f);
-  });
-});
- 
-initPadron();
-checkReady();
+
+    function clearPadron() {
+        localStorage.removeItem(PADRON_KEY);
+        KM = {};
+        updatePadronUI(false);
+        showToast("Padrón eliminado");
+    }
+
+    // --- Lógica de Agenda ---
+    function loadAgenda(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+                agendaRows = rows.slice(3).filter(r => r[2]);
+                const count = [...new Set(agendaRows.map(r => r[2]))].length;
+                
+                document.getElementById('dz-agenda').classList.add('loaded');
+                document.getElementById('agenda-txt').textContent = "Agenda cargada";
+                document.getElementById('btn-gen').disabled = false;
+                document.getElementById('hint-txt').innerHTML = `Detectados <strong>${count} choferes</strong>`;
+                showToast(`Agenda cargada: ${agendaRows.length} órdenes`);
+            } catch (err) {
+                showToast("Error al cargar agenda", "danger");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // --- Simulación de Generación y UI ---
+    function generate() {
+        document.getElementById('idle-state').classList.add('hidden');
+        document.getElementById('prog-card').classList.remove('hidden');
+        const grid = document.getElementById('driver-grid');
+        grid.innerHTML = '';
+        
+        let progress = 0;
+        const drivers = [...new Set(agendaRows.map(r => r[2]))].sort();
+        
+        const interval = setInterval(() => {
+            if (progress >= drivers.length) {
+                clearInterval(interval);
+                finalize();
+                return;
+            }
+            
+            const name = drivers[progress];
+            addDriverCard(name);
+            progress++;
+            
+            const pct = Math.round((progress / drivers.length) * 100);
+            document.getElementById('prog-fill').style.width = pct + '%';
+            document.getElementById('prog-text').textContent = `Procesando: ${name}`;
+        }, 30);
+    }
+
+    function addDriverCard(name) {
+        const grid = document.getElementById('driver-grid');
+        const initials = name.split(' ').map(n => n[0]).join('').substring(0,2);
+        const card = document.createElement('div');
+        card.className = 'driver-card';
+        card.innerHTML = `
+            <div class="dc-avatar done">${initials}</div>
+            <div class="dc-info">
+                <div class="dc-name">${name}</div>
+                <div class="dc-meta">Liquidación generada</div>
+            </div>
+            <div class="dc-km"><i data-lucide="check" size="14"></i></div>
+        `;
+        grid.appendChild(card);
+        lucide.createIcons();
+    }
+
+    function finalize() {
+        document.getElementById('prog-card').classList.add('hidden');
+        document.getElementById('btn-dl').classList.remove('hidden');
+        document.getElementById('result-n').textContent = `(${agendaRows.length} viajes)`;
+        showToast("Proceso finalizado con éxito");
+        // Aquí iría la lógica de construcción del Excel real (buildSheet)
+    }
+
+    function showToast(msg, type = "success") {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    initPadron();
 </script>
+
+<style>
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+</style>
+
 </body>
 </html>
