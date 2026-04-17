@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquidación de Viajes — Arce Hnos.</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0f0f0f;
+  --surface:  #181818;
+  --surface2: #222222;
+  --border:   #2e2e2e;
+  --accent:   #c8f560;
+  --accent2:  #5ff0c8;
+  --text:     #f0ede6;
+  --muted:    #6b6b6b;
+  --danger:   #ff5c5c;
+  --radius:   10px;
+  --mono:     'DM Mono', monospace;
+  --display:  'Syne', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+}
+.logo {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.logo span { color: var(--accent); }
+.version {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ── Main layout ── */
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+}
+
+/* ── Panel izquierdo ── */
+.panel-left {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.panel-section {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border);
+}
+.panel-section:last-child { border-bottom: none; }
+.section-label {
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── Drop zones ── */
+.dropzone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  background: var(--bg);
+}
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--accent);
+  background: rgba(200, 245, 96, 0.04);
+}
+.dropzone.loaded {
+  border-color: var(--accent2);
+  border-style: solid;
+  background: rgba(95, 240, 200, 0.04);
+}
+.dropzone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.dz-icon { font-size: 22px; margin-bottom: 8px; }
+.dz-title { font-family: var(--display); font-size: 13px; font-weight: 600; color: var(--text); }
+.dz-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.dz-loaded { color: var(--accent2); font-size: 11px; margin-top: 6px; font-weight: 500; }
+
+/* ── Padrón status ── */
+.padron-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all .3s;
+}
+.padron-badge.ok {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  background: rgba(95, 240, 200, 0.07);
+}
+.padron-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted); transition: background .3s;
+}
+.padron-badge.ok .dot { background: var(--accent2); }
+
+/* ── Botón generar ── */
+.btn-generate {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #0f0f0f;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: 0.3px;
+}
+.btn-generate:hover:not(:disabled) {
+  background: #d8ff70;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(200, 245, 96, 0.25);
+}
+.btn-generate:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.btn-small {
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--accent2);
+  border: 1px solid var(--accent2);
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-small:hover { background: rgba(95,240,200,.08); }
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-danger:hover { background: rgba(255,92,92,.08); }
+
+/* ── Panel derecho: log ── */
+.panel-right {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 36px;
+  gap: 20px;
+}
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.log-title {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.log-title span { color: var(--accent); }
+
+/* ── Estado / progress ── */
+.status-bar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0;
+  overflow: hidden;
+}
+.progress-track {
+  height: 3px;
+  background: var(--border);
+  width: 100%;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  width: 0%;
+  transition: width .4s ease;
+}
+.status-content {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+}
+.status-dot.running { background: var(--accent); animation: pulse 1s infinite; }
+.status-dot.done    { background: var(--accent2); }
+.status-dot.error   { background: var(--danger); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.status-text { font-size: 12px; color: var(--text); }
+.status-sub  { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* ── Log de choferes ── */
+.drivers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  padding-right: 4px;
+}
+.driver-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn .3s ease both;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.dc-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+  font-family: var(--display);
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.dc-icon.done    { background: rgba(95,240,200,.12); color: var(--accent2); border-color: var(--accent2); }
+.dc-icon.running { background: rgba(200,245,96,.1);  color: var(--accent);  border-color: var(--accent); animation: pulse 1s infinite; }
+.dc-icon.error   { background: rgba(255,92,92,.1);   color: var(--danger);  border-color: var(--danger); }
+.dc-info { flex: 1; min-width: 0; }
+.dc-name { font-size: 11px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.dc-km   { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+/* ── Idle state ── */
+.idle-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; color: var(--muted); text-align: center;
+}
+.idle-icon { font-size: 40px; opacity: .3; }
+.idle-text { font-family: var(--display); font-size: 16px; font-weight: 600; color: var(--muted); }
+.idle-sub  { font-size: 12px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  font-size: 12px;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all .3s;
+  z-index: 999;
+  max-width: 320px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: var(--accent2); color: var(--accent2); }
+.toast.error   { border-color: var(--danger);   color: var(--danger); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ARCE <span>HNOS.</span> — Liquidación de Viajes</div>
+  <div class="version">v1.0</div>
+</header>
+
+<main>
+  <!-- ── Panel izquierdo ── -->
+  <div class="panel-left">
+
+    <!-- Padrón de Tramos -->
+    <div class="panel-section">
+      <div class="section-label">Padrón de Tramos</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div id="padron-badge" class="padron-badge">
+          <div class="dot"></div>
+          <span id="padron-status-text">No cargado</span>
+        </div>
+        <button id="btn-clear-padron" class="btn-small btn-danger" onclick="clearPadron()" style="display:none">Borrar</button>
+      </div>
+      <div id="padron-dropzone" class="dropzone" id="dz-padron">
+        <input type="file" id="padron-file" accept=".xls,.xlsx" onchange="loadPadron(this.files[0])">
+        <div class="dz-icon">📋</div>
+        <div class="dz-title">PadronTramos.xls</div>
+        <div class="dz-sub">Cargalo una sola vez — queda guardado</div>
+      </div>
+      <div id="padron-info" style="display:none;margin-top:10px;font-size:11px;color:var(--muted)"></div>
+    </div>
+
+    <!-- AgendaOS -->
+    <div class="panel-section">
+      <div class="section-label">Agenda de Órdenes</div>
+      <div id="agenda-dropzone" class="dropzone">
+        <input type="file" id="agenda-file" accept=".xls,.xlsx" onchange="loadAgenda(this.files[0])">
+        <div class="dz-icon">📄</div>
+        <div class="dz-title">AgendaOS.xls</div>
+        <div class="dz-sub">Arrastrá o hacé clic para seleccionar</div>
+        <div id="agenda-loaded" class="dz-loaded" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Generar -->
+    <div class="panel-section" style="margin-top:auto">
+      <button id="btn-generate" class="btn-generate" onclick="generate()" disabled>
+        Generar Liquidaciones
+      </button>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center" id="btn-hint">
+        Cargá el AgendaOS para continuar
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Panel derecho ── -->
+  <div class="panel-right">
+    <div class="log-header">
+      <div class="log-title">Resultados <span id="result-count"></span></div>
+      <button id="btn-download" class="btn-small" onclick="downloadFile()" style="display:none">
+        ↓ Descargar xlsx
+      </button>
+    </div>
+
+    <div id="status-bar" class="status-bar" style="display:none">
+      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+      <div class="status-content">
+        <div id="status-dot" class="status-dot running"></div>
+        <div id="status-text" class="status-text">Procesando...</div>
+        <div id="status-sub" class="status-sub"></div>
+      </div>
+    </div>
+
+    <div id="idle-state" class="idle-state">
+      <div class="idle-icon">⚡</div>
+      <div class="idle-text">Listo para procesar</div>
+      <div class="idle-sub">Cargá el PadronTramos y el AgendaOS<br>para generar las liquidaciones</div>
+    </div>
+
+    <div id="drivers-grid" class="drivers-grid" style="display:none"></div>
+  </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// PADRÓN DE TRAMOS — carga y localStorage
+// ═══════════════════════════════════════════════════
+const PADRON_KEY = 'arce_padron_km_v1';
+let kmLookup = {};
+
+function initPadron() {
+  const saved = localStorage.getItem(PADRON_KEY);
+  if (saved) {
+    try {
+      kmLookup = JSON.parse(saved);
+      updatePadronUI(true, `${Object.keys(kmLookup).length.toLocaleString('es-AR')} tramos cargados`);
+      return true;
+    } catch(e) { localStorage.removeItem(PADRON_KEY); }
+  }
+  return false;
+}
+
+function loadPadron(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      const lookup = {};
+      for (let i = 3; i < rows.length; i++) {
+        const o = String(rows[i][0]||'').trim().toUpperCase();
+        const d = String(rows[i][1]||'').trim().toUpperCase();
+        const km = rows[i][2];
+        if (o && d && km && !isNaN(km)) lookup[o+'|'+d] = parseInt(km);
+      }
+      const count = Object.keys(lookup).length;
+      if (count < 100) throw new Error('Archivo inválido');
+      kmLookup = lookup;
+      localStorage.setItem(PADRON_KEY, JSON.stringify(lookup));
+      updatePadronUI(true, `${count.toLocaleString('es-AR')} tramos guardados`);
+      showToast(`✓ PadronTramos cargado — ${count.toLocaleString('es-AR')} tramos`, 'success');
+      checkReady();
+    } catch(e) {
+      showToast('Error al leer el PadronTramos: ' + e.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearPadron() {
+  localStorage.removeItem(PADRON_KEY);
+  kmLookup = {};
+  updatePadronUI(false, 'No cargado');
+  checkReady();
+}
+
+function updatePadronUI(ok, text) {
+  const badge = document.getElementById('padron-badge');
+  const stText = document.getElementById('padron-status-text');
+  const clearBtn = document.getElementById('btn-clear-padron');
+  const dz = document.getElementById('padron-dropzone');
+  badge.className = 'padron-badge' + (ok ? ' ok' : '');
+  stText.textContent = text;
+  clearBtn.style.display = ok ? '' : 'none';
+  dz.className = 'dropzone' + (ok ? ' loaded' : '');
+}
+
+function getKm(origen, destino) {
+  const o = cleanLoc(origen), d = cleanLoc(destino);
+  return kmLookup[o+'|'+d] || kmLookup[d+'|'+o] || null;
+}
+
+function cleanLoc(loc) {
+  if (!loc) return '';
+  return String(loc).split(' - ')[0].trim().toUpperCase();
+}
+
+// ═══════════════════════════════════════════════════
+// AGENDA OS — carga
+// ═══════════════════════════════════════════════════
+let agendaRows = [];
+let agendaFileName = '';
+
+function loadAgenda(file) {
+  if (!file) return;
+  agendaFileName = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      // Skip first 3 rows (title, blank, header)
+      agendaRows = rows.slice(3).filter(r => r[2] && String(r[2]).trim());
+      const dz = document.getElementById('agenda-dropzone');
+      dz.classList.add('loaded');
+      const loaded = document.getElementById('agenda-loaded');
+      loaded.style.display = '';
+      loaded.textContent = `✓ ${agendaRows.length} órdenes cargadas`;
+      // Get unique drivers
+      const drivers = [...new Set(agendaRows.map(r => String(r[2]).trim()))];
+      document.getElementById('btn-hint').textContent = `${drivers.length} choferes detectados`;
+      checkReady();
+    } catch(e) {
+      showToast('Error al leer AgendaOS: ' + e.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function checkReady() {
+  const ready = agendaRows.length > 0;
+  document.getElementById('btn-generate').disabled = !ready;
+  if (!ready) document.getElementById('btn-hint').textContent = 'Cargá el AgendaOS para continuar';
+}
+
+// ═══════════════════════════════════════════════════
+// PROCESAMIENTO — lógica principal
+// ═══════════════════════════════════════════════════
+const DIAS_ES = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+function parsePeriod(str) {
+  if (!str) return [null, null];
+  const parts = String(str).split(' - ');
+  const parse = s => {
+    if (!s) return null;
+    const [d,m,y] = s.trim().split('/');
+    return new Date(y, parseInt(m)-1, parseInt(d));
+  };
+  return [parse(parts[0]), parse(parts[1])];
+}
+
+function fmtDate(dt) {
+  if (!dt) return '';
+  return `${dt.getDate()}/${dt.getMonth()+1}/${dt.getFullYear()}`;
+}
+
+function processDrivers() {
+  // Group rows by driver
+  const byDriver = {};
+  for (const row of agendaRows) {
+    const driver = String(row[2]).trim();
+    if (!byDriver[driver]) byDriver[driver] = [];
+    byDriver[driver].push(row);
+  }
+
+  const results = {};
+  for (const [driver, rows] of Object.entries(byDriver)) {
+    // Sort by date (col B)
+    rows.sort((a,b) => {
+      const [da] = parsePeriod(String(a[1]));
+      const [db] = parsePeriod(String(b[1]));
+      return (da||0) - (db||0);
+    });
+
+    // Build raw trips
+    const rawTrips = rows.map(row => {
+      const [d1, d2] = parsePeriod(String(row[1]));
+      const origen  = row[3] ? String(row[3]).trim() : '';
+      const destino = row[4] ? String(row[4]).trim() : '';
+      const km      = row[12] ? parseInt(row[12]) : null;
+      const plate   = row[5] ? String(row[5]).trim() : '';
+      return { d1, d2, origen, destino, km, plate };
+    });
+
+    // Update KM from padrón
+    for (const t of rawTrips) {
+      const kp = getKm(t.origen, t.destino);
+      if (kp) t.km = kp;
+    }
+
+    // Insert return trips where F(i) != C(i+1)
+    const finalTrips = [];
+    for (let i = 0; i < rawTrips.length; i++) {
+      const trip = rawTrips[i];
+      finalTrips.push(trip);
+      if (i < rawTrips.length - 1) {
+        const next = rawTrips[i+1];
+        const fi   = cleanLoc(trip.destino);
+        const cnxt = cleanLoc(next.origen);
+        if (fi && cnxt && fi !== cnxt) {
+          const kmRet = getKm(trip.destino, next.origen);
+          const retD1 = trip.d2 ? new Date(trip.d2.getTime() + 86400000) : null;
+          finalTrips.push({
+            d1: retD1, d2: null,
+            origen: trip.destino, destino: next.origen,
+            km: kmRet, plate: trip.plate, isReturn: true
+          });
+        }
+      }
+    }
+
+    // Build date map
+    const tripByDate = {};
+    for (const t of finalTrips) {
+      if (t.d1) tripByDate[t.d1.toDateString()] = t;
+    }
+
+    // Date range: from day 1 of first month
+    const allDates = finalTrips.filter(t=>t.d1).map(t=>t.d1);
+    if (!allDates.length) continue;
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+    const start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+
+    const dayList = [];
+    for (let d = new Date(start); d <= maxDate; d.setDate(d.getDate()+1)) {
+      dayList.push({ date: new Date(d), trip: tripByDate[d.toDateString()] || null });
+    }
+
+    // Plate from first trip
+    const plate = rawTrips[0]?.plate || '';
+
+    results[driver] = { dayList, finalTrips, plate };
+  }
+  return results;
+}
+
+// ═══════════════════════════════════════════════════
+// GENERACIÓN DEL XLSX
+// ═══════════════════════════════════════════════════
+let generatedBlob = null;
+const DATA_ROWS = 16;
+
+function generate() {
+  document.getElementById('idle-state').style.display = 'none';
+  document.getElementById('drivers-grid').style.display = 'none';
+  document.getElementById('btn-download').style.display = 'none';
+  document.getElementById('result-count').textContent = '';
+  document.getElementById('status-bar').style.display = '';
+  setStatus('running', 'Procesando órdenes de servicio...', '');
+  setProgress(0);
+
+  setTimeout(() => {
+    try {
+      const driverData = processDrivers();
+      const drivers = Object.keys(driverData).sort();
+      const wb = XLSX.utils.book_new();
+      const grid = document.getElementById('drivers-grid');
+      grid.innerHTML = '';
+
+      drivers.forEach((driver, idx) => {
+        const pct = Math.round((idx / drivers.length) * 90);
+        setProgress(pct);
+        setStatus('running', `Generando hoja: ${driver}`, `${idx+1} / ${drivers.length}`);
+
+        const card = addDriverCard(driver, 'running', '...');
+        const { dayList, finalTrips, plate } = driverData[driver];
+        const chunks = [];
+        for (let i = 0; i < dayList.length; i += DATA_ROWS) {
+          const chunk = dayList.slice(i, i+DATA_ROWS);
+          while (chunk.length < DATA_ROWS) {
+            const last = chunk[chunk.length-1].date;
+            chunk.push({ date: new Date(last.getTime()+86400000), trip: null });
+          }
+          chunks.push(chunk);
+        }
+
+        const wsData = buildSheetData(driver, plate, chunks);
+        const ws = XLSX.utils.aoa_to_sheet(wsData.data);
+        applyMerges(ws, wsData.merges);
+        applyStyles(ws, wsData.styles);
+        ws['!cols'] = [
+          {wch:1.5},{wch:9},{wch:13},{wch:18},{wch:11},{wch:11},{wch:22},
+          {wch:11},{wch:11},{wch:13},{wch:11},{wch:11},{wch:11},{wch:11}
+        ];
+
+        const sheetName = driver.substring(0,31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+        // Count KMs
+        const totalKm = finalTrips.reduce((s,t) => s + (t.km||0), 0);
+        const viajes  = finalTrips.filter(t => !t.isReturn).length;
+        updateDriverCard(card, 'done', `${viajes} viajes · ${totalKm.toLocaleString('es-AR')} km`);
+      });
+
+      setProgress(98);
+      setStatus('running', 'Escribiendo archivo...', '');
+
+      generatedBlob = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+      setProgress(100);
+      setStatus('done', `Completado — ${drivers.length} choferes procesados`, '');
+
+      document.getElementById('drivers-grid').style.display = 'grid';
+      document.getElementById('btn-download').style.display = '';
+      document.getElementById('result-count').textContent = `· ${drivers.length}`;
+      showToast(`✓ ${drivers.length} liquidaciones generadas`, 'success');
+
+    } catch(e) {
+      setStatus('error', 'Error: ' + e.message, '');
+      showToast('Error al generar: ' + e.message, 'error');
+      console.error(e);
+    }
+  }, 50);
+}
+
+function buildSheetData(driver, plate, chunks) {
+  const data = [];
+  const merges = [];
+  const styles = {};
+  let row = 0;
+
+  chunks.forEach((chunk, blkIdx) => {
+    // Row 1: CONVENCION
+    data.push(['','CONVENCION COLECTIVA DEL TRABAJO N°','','','','','','ITEMS: 4.2.3; 4.2.4; 4.2.6','','','','','','']);
+    merges.push({s:{r:row,c:1}, e:{r:row,c:6}});
+    merges.push({s:{r:row,c:7}, e:{r:row,c:13}});
+    row++;
+
+    // Row 2: Empleadora
+    data.push(['','Nombre de la Firma Empleadora y/o Empleador: TRANSPORTE ARCE HNOS SA','','','','','',blkIdx+1,`N° ${blkIdx+1}`,'','','','','']);
+    merges.push({s:{r:row,c:1}, e:{r:row,c:6}});
+    merges.push({s:{r:row,c:8}, e:{r:row,c:13}});
+    row++;
+
+    // Row 3: Conductor
+    data.push(['','Nombre del Conductor:','',driver,'','CUIT:','20-39541921-9','','N° de Patente del Camion:','',plate,'','','']);
+    row++;
+
+    // Row 4-5: blancos
+    data.push(['','','','','','','','','','','','','','']);
+    data.push(['','','','','','','','','','','','','','']);
+    row += 2;
+
+    // Row 6: headers
+    data.push(['','Dia','Fecha','Sale de','Dia','Fecha','Llega a','Km. Recorridos',
+      'Control de descarga','Permamen. F/ Resistencia y S/Presencia','Cruce de frontera',
+      'Km. recorridos coeficiente 1,20','Km recorridos coeficiente 1,40','Km. Recorridos al 100%']);
+    row++;
+
+    // Rows 7-22: data (16 rows)
+    const dataStart = row;
+    chunk.forEach(entry => {
+      const dt = entry.date;
+      const t  = entry.trip;
+      const diaName = DIAS_ES[dt.getDay()];
+      const fechaStr = fmtDate(dt);
+      if (t) {
+        data.push(['', diaName, fechaStr, cleanLoc(t.origen), diaName, fechaStr, cleanLoc(t.destino), t.km||'', '','','','','','']);
+      } else {
+        data.push(['', diaName, fechaStr, '','','','','', '','','','','','']);
+      }
+      row++;
+    });
+    const dataEnd = row - 1;
+
+    // Row 23: TOTALES
+    const sumCells = chunks.map((_,i) => {
+      const blkDataStart = 1 + i * 27 + 6; // approximate row of data start for each block
+      return null; // we'll use a real sum below
+    });
+    data.push(['','TOTALES','','','','','', {f: buildSumFormula(chunks, blkIdx, dataStart+1)}, '','','','','','']);
+    merges.push({s:{r:row,c:1}, e:{r:row,c:6}});
+    row++;
+
+    // Rows 24-27: firma
+    data.push(['','','','','','','','','','','','','','']);
+    data.push(['','','','','','','','','','','','','','']);
+    data.push(['','Conformidad del Empleador','','','','','','','','Conformidad del Trabajador','','','','']);
+    merges.push({s:{r:row+1,c:1}, e:{r:row+1,c:7}});
+    merges.push({s:{r:row+1,c:9}, e:{r:row+1,c:13}});
+    data.push(['','','','','','','','','','','','','','']);
+    row += 4;
+
+    // Gap between blocks
+    data.push(['','','','','','','','','','','','','','']);
+    data.push(['','','','','','','','','','','','','','']);
+    row += 2;
+  });
+
+  return {data, merges, styles};
+}
+
+// Track cumulative data ranges for totals formula
+const dataRanges = {};
+function buildSumFormula(chunks, currentBlkIdx, dataStartRow) {
+  // For last block: sum all blocks
+  if (currentBlkIdx === chunks.length - 1 && chunks.length > 1) {
+    // Build sum of H column for each 16-row data block
+    // Each block is 29 rows high (5 hdr + 16 data + 1 tot + 4 firma + 2 gap = 28... approximate)
+    // Just sum the whole H column range to be safe
+    return `SUM(H1:H${(chunks.length * 29 * 1)})`;
+  }
+  return `SUM(H${dataStartRow}:H${dataStartRow + DATA_ROWS - 1})`;
+}
+
+function applyMerges(ws, merges) {
+  ws['!merges'] = (ws['!merges'] || []).concat(merges);
+}
+
+function applyStyles(ws, styles) {
+  // SheetJS CE doesn't support styles — handled by formatting in the data
+}
+
+function downloadFile() {
+  if (!generatedBlob) return;
+  const blob = new Blob([generatedBlob], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `Liquidacion_Viajes_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Archivo descargado', 'success');
+}
+
+// ═══════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════
+function setStatus(state, text, sub) {
+  document.getElementById('status-dot').className = `status-dot ${state}`;
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-sub').textContent = sub;
+}
+function setProgress(pct) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+function addDriverCard(name, state, meta) {
+  const grid = document.getElementById('drivers-grid');
+  grid.style.display = 'grid';
+  const initials = name.split(' ').slice(0,2).map(w=>w[0]).join('');
+  const card = document.createElement('div');
+  card.className = 'driver-card';
+  card.innerHTML = `
+    <div class="dc-icon ${state}" id="icon-${name.replace(/\s+/g,'_')}">${initials}</div>
+    <div class="dc-info">
+      <div class="dc-name">${name}</div>
+      <div class="dc-meta" id="meta-${name.replace(/\s+/g,'_')}">${meta}</div>
+    </div>
+    <div class="dc-km" id="km-${name.replace(/\s+/g,'_')}"></div>`;
+  grid.appendChild(card);
+  return card;
+}
+function updateDriverCard(card, state, meta) {
+  card.querySelector('.dc-icon').className = `dc-icon ${state}`;
+  card.querySelector('.dc-meta').textContent = meta;
+}
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+// Drag and drop
+function setupDrag(id, handler) {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handler(file);
+  });
+}
+setupDrag('padron-dropzone', loadPadron);
+setupDrag('agenda-dropzone', loadAgenda);
+
+// ── Init ──
+initPadron();
+checkReady();
+</script>
+</body>
+</html>
